@@ -13,9 +13,14 @@ require_util() {
         oops "you do not have \`$1' installed, which i need to $2"
 }
 
+clean() {
+    echo "Removing temporary files..." >&2
+    rm -rf "$unpack"
+}
+
 oops() {
     echo "$0: $@" >&2
-    rm -rf "$unpack"
+    clean
     exit 1
 }
 
@@ -32,14 +37,24 @@ require_util curl "download the binary tarball"
 require_util bzcat "decompress the binary tarball"
 require_util tar "unpack the binary tarball"
 
-echo "unpacking Nix binary tarball for $system from \`$url'..."
-mkdir "$unpack" || oops "failed to create \`$unpack' directory"
-curl -L "$url" | bzcat | tar x -C "$unpack" || oops "failed to unpack \`$url'"
+if [ -d "$unpack" ]; then
+	echo "Install binaries already downloaded"
+	echo "If you want to download them again, remove \"$unpack\""
+	echo "unpacking Nix binary tarball for $system from \`$url'..."
+else
+	mkdir "$unpack" || oops "failed to create \`$unpack' directory"
+	curl -L "$url" | bzcat | tar x -C "$unpack" || oops "failed to unpack \`$url'"
+fi
 
 [ -e "$unpack"/*/install ] ||
     oops "installation script is missing from the binary tarball!"
 
-"$unpack"/*/install
-rm -rf "$unpack"
+if "$unpack"/*/store/*-bash-*/bin/bash "$unpack"/*/install; then
+	clean
+else
+	echo "Installation failed - please remedy the cause and run this command again" >&2
+	echo "Keeping \"$unpack\" directory." >&2
+	exit 1
+fi
 
 } # End of wrapping
