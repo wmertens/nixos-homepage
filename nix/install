@@ -40,8 +40,8 @@ require_util tar "unpack the binary tarball"
 if [ -d "$unpack" ]; then
 	echo "Install binaries already downloaded"
 	echo "If you want to download them again, remove \"$unpack\""
-	echo "unpacking Nix binary tarball for $system from \`$url'..."
 else
+	echo "unpacking Nix binary tarball for $system from \`$url'..."
 	mkdir "$unpack" || oops "failed to create \`$unpack' directory"
 	curl -L "$url" | bzcat | tar x -C "$unpack" || oops "failed to unpack \`$url'"
 fi
